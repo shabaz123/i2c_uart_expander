@@ -1,0 +1,10 @@
+# Object files
+obj/
+
+# Temporary directories used during setup
+.tmp_base/
+.tmp_ref/
+
+# OS generated files
+.DS_Store
+Thumbs.db

@@ -1,0 +1,60 @@
+name: Release
+
+on:
+  push:
+    branches: [ "main" ]
+    tags:
+      - v*
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    name: Build Firmware
+    runs-on: ubuntu-24.04
+    env:
+      BASE_URL: "https://github.com/beagleboard/mspm0-adc-eeprom/releases/download"
+      ICON_URL: "https://upload.wikimedia.org/wikipedia/commons/6/67/USB_icon.svg"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Intial Setup
+        run: |
+          wget https://dr-download.ti.com/software-development/ide-configuration-compiler-or-debugger/MD-ayxs93eZNN/4.0.4.LTS/ti_cgt_armllvm_4.0.4.LTS_linux-x64_installer.bin
+          chmod +x ./ti_cgt_armllvm_4.0.4.LTS_linux-x64_installer.bin
+          ./ti_cgt_armllvm_4.0.4.LTS_linux-x64_installer.bin
+
+      - name: Build firmware
+        run: |
+          make
+          xz -z pcu_pocketbeagle2.txt
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          generate_release_notes: true
+          files: |
+            pcu_pocketbeagle2.txt.xz
+
+      - name: Generate os_list.json
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          TAG="${GITHUB_REF##*/}"
+          RELEASE_DATE=$(date +"%Y-%m-%d")
+          SHA=$(sha256sum pcu_pocketbeagle2.txt.xz | cut -d " " -f 1)
+          EXTRACT_SIZE=$(xz --robot --list pcu_pocketbeagle2.txt.xz | awk 'END {print $5}')
+          URL=${BASE_URL}/${TAG}/pcu_pocketbeagle2.txt.xz
+          jq --arg sha "${SHA}" --arg url ${URL} --arg release_date $RELEASE_DATE --argjson extract_size $EXTRACT_SIZE -n '.os_list = [{"name": "MSPM0 Firmware", "description": "Firmware for internal MSPM0L1105", "icon": env.ICON_URL, "flasher": "Pb2Mspm0", "subitems": [{ "name": "MSPM0 ADC EEPROM", "description": "Emulates EEPROM and ADC", "icon": env.ICON_URL, "devices": ["pocketbeagle2-am62"], "tags": ["freertos"], "release_date": $release_date, "extract_size": $extract_size, "image_download_sha256": $sha, "url": $url }] }]' > os_list.json
+
+      - name: OS List Generation
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          prerelease: true
+          name: OS List File
+          tag_name: os-list
+          body: OS List Files for use with BeagleBoard Imaging Utility
+          files: |
+            os_list.json
