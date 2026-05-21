@@ -12,6 +12,8 @@ jobs:
   build:
     name: Build Firmware
     runs-on: ubuntu-24.04
+    permissions:
+      contents: write
     env:
       BASE_URL: "https://github.com/shabaz123/i2c_uart_expander/releases/download"
       ICON_URL: "https://upload.wikimedia.org/wikipedia/commons/6/67/USB_icon.svg"
