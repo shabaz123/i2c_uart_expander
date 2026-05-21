@@ -2,11 +2,15 @@
 ifeq ($(OS),Windows_NT)
 SHELL := cmd.exe
 .SHELLFLAGS := /d /s /c
-endif
-
-# Project-specific paths
+# Windows paths
 GCC_ARMCOMPILER_MSP ?= C:/DEV/arm_gnu_toolchains/15.2.rel1
 MSPM0_SDK_INSTALL_DIR ?= C:/ti/mspm0_sdk_2_10_00_04
+else
+# Linux paths (e.g. GitHub Actions)
+GCC_ARMCOMPILER_MSP ?= /usr
+# Use the SDK bundled in the repository
+MSPM0_SDK_INSTALL_DIR ?= $(CURDIR)/source/mspm0-sdk
+endif
 
 CC = "$(GCC_ARMCOMPILER_MSP)/bin/arm-none-eabi-gcc"
 LNK = "$(GCC_ARMCOMPILER_MSP)/bin/arm-none-eabi-gcc"
