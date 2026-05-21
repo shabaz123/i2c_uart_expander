@@ -5,11 +5,13 @@ SHELL := cmd.exe
 # Windows paths
 GCC_ARMCOMPILER_MSP ?= C:/DEV/arm_gnu_toolchains/15.2.rel1
 MSPM0_SDK_INSTALL_DIR ?= C:/ti/mspm0_sdk_2_10_00_04
+# Standard SDK install has ti/ and third_party/ inside source/
+SDK_ROOT = $(MSPM0_SDK_INSTALL_DIR)/source
 else
 # Linux paths (e.g. GitHub Actions)
 GCC_ARMCOMPILER_MSP ?= /usr
-# Use the SDK bundled in the repository
-MSPM0_SDK_INSTALL_DIR ?= $(CURDIR)/source/mspm0-sdk
+# Bundled SDK in repo has ti/ and third_party/ directly in mspm0-sdk/
+SDK_ROOT = $(CURDIR)/source/mspm0-sdk
 endif
 
 CC = "$(GCC_ARMCOMPILER_MSP)/bin/arm-none-eabi-gcc"
@@ -35,8 +37,8 @@ CFLAGS = -I$(BRD_DIR) \
     -I$(COM_DIR) \
     -D__MSPM0L1105__ \
     -O2 \
-    "-I$(MSPM0_SDK_INSTALL_DIR)/source/third_party/CMSIS/Core/Include" \
-    "-I$(MSPM0_SDK_INSTALL_DIR)/source" \
+    "-I$(SDK_ROOT)/third_party/CMSIS/Core/Include" \
+    "-I$(SDK_ROOT)" \
     -mcpu=cortex-m0plus \
     -march=armv6-m \
     -mthumb \
@@ -51,9 +53,9 @@ CFLAGS = -I$(BRD_DIR) \
     "-I$(GCC_ARMCOMPILER_MSP)/arm-none-eabi/include"
 
 # Linker flags
-LFLAGS = "-L$(MSPM0_SDK_INSTALL_DIR)/source/ti/driverlib/lib/gcc/m0p/mspm0l11xx_l13xx" \
+LFLAGS = "-L$(SDK_ROOT)/ti/driverlib/lib/gcc/m0p/mspm0l11xx_l13xx" \
     -nostartfiles \
-    -Wl,-T,$(MSPM0_SDK_INSTALL_DIR)/source/ti/devices/msp/m0p/linker_files/gcc/mspm0l1105.lds \
+    -Wl,-T,$(SDK_ROOT)/ti/devices/msp/m0p/linker_files/gcc/mspm0l1105.lds \
     "-Wl,-Map,$(NAME).map" \
     "-l:driverlib.a" \
     -march=armv6-m \
@@ -116,7 +118,7 @@ $(OBJ_DIR)/i2c_tar_driver.o: $(COM_DIR)/i2c_tar_driver.c
 	@ echo Building $@
 	@ $(CC) $(CFLAGS) $< -c -o $@
 
-$(OBJ_DIR)/startup_mspm0l110x_gcc.o: $(MSPM0_SDK_INSTALL_DIR)/source/ti/devices/msp/m0p/startup_system_files/gcc/startup_mspm0l110x_gcc.c
+$(OBJ_DIR)/startup_mspm0l110x_gcc.o: $(SDK_ROOT)/ti/devices/msp/m0p/startup_system_files/gcc/startup_mspm0l110x_gcc.c
 	@ echo Building $@
 	@ $(CC) $(CFLAGS) $< -c -o $@
 
