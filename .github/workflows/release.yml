@@ -15,8 +15,6 @@ jobs:
     permissions:
       contents: write
     env:
-      BASE_URL: "https://github.com/shabaz123/i2c_uart_expander/releases/download"
-      ICON_URL: "https://upload.wikimedia.org/wikipedia/commons/6/67/USB_icon.svg"
       PROJECT_NAME: "i2c_uart_expander"
     steps:
       - name: Checkout
@@ -61,24 +59,3 @@ jobs:
             ${{ env.PROJECT_NAME }}.hex
             ${{ env.PROJECT_NAME }}.out
             ${{ env.PROJECT_NAME }}.txt.xz
-
-      - name: Generate os_list.json
-        if: startsWith(github.ref, 'refs/tags/')
-        run: |
-          TAG="${GITHUB_REF##*/}"
-          RELEASE_DATE=$(date +"%Y-%m-%d")
-          SHA=$(sha256sum ${{ env.PROJECT_NAME }}.txt.xz | cut -d " " -f 1)
-          EXTRACT_SIZE=$(xz --robot --list ${{ env.PROJECT_NAME }}.txt.xz | awk 'END {print $5}')
-          URL=${BASE_URL}/${TAG}/${{ env.PROJECT_NAME }}.txt.xz
-          jq --arg sha "${SHA}" --arg url ${URL} --arg release_date $RELEASE_DATE --argjson extract_size $EXTRACT_SIZE -n '.os_list = [{"name": "MSPM0 Firmware", "description": "Firmware for internal MSPM0L1105", "icon": env.ICON_URL, "flasher": "Pb2Mspm0", "subitems": [{ "name": "I2C UART Expander", "description": "Emulates UART and ADC", "icon": env.ICON_URL, "devices": ["pocketbeagle2-am62"], "tags": ["freertos"], "release_date": $release_date, "extract_size": $extract_size, "image_download_sha256": $sha, "url": $url }] }]' > os_list.json
-
-      - name: OS List Generation
-        uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/')
-        with:
-          prerelease: true
-          name: OS List File
-          tag_name: os-list
-          body: OS List Files for use with BeagleBoard Imaging Utility
-          files: |
-            os_list.json
