@@ -20,14 +20,28 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Install Toolchain
+      - name: Install Toolchain and Utils
         run: |
           sudo apt-get update
-          sudo apt-get install -y gcc-arm-none-eabi libnewlib-arm-none-eabi
+          sudo apt-get install -y gcc-arm-none-eabi libnewlib-arm-none-eabi zip
 
       - name: Build firmware
         run: |
           make
+          
+          # Create build info file
+          {
+            echo "Project: ${{ env.PROJECT_NAME }}"
+            echo "Build Date: $(date)"
+            echo "Commit: ${GITHUB_SHA}"
+          } > ${{ env.PROJECT_NAME }}-build-info.txt
+
+          # Create zip archive for users
+          zip ${{ env.PROJECT_NAME }}.zip \
+            ${{ env.PROJECT_NAME }}.hex \
+            ${{ env.PROJECT_NAME }}.map \
+            ${{ env.PROJECT_NAME }}-build-info.txt
+
           # The original project converted the .out to a .txt for some reason, 
           # but we'll stick to .hex and .out.
           # If pcu_pocketbeagle2.txt is expected by the downstream release process, 
@@ -41,6 +55,7 @@ jobs:
         with:
           generate_release_notes: true
           files: |
+            ${{ env.PROJECT_NAME }}.zip
             ${{ env.PROJECT_NAME }}.hex
             ${{ env.PROJECT_NAME }}.out
             ${{ env.PROJECT_NAME }}.txt.xz
